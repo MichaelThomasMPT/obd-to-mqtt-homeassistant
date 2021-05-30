@@ -1,3 +1,5 @@
+NOTE: This readme is very much a work in progress, and is currently just a braindump of things to remember. 
+
 TODO: Add dockerfile with:
 
     pip install obd
