@@ -1,0 +1,51 @@
+car:
+  name: Mazda CX-5 #Must be unique in Home Assistant
+  manufacturer: Mazda
+  model: CX-5 Maxx 2015
+
+attributes:
+  engine_load: 
+    name: Engine Load
+    obd_key: ENGINE_LOAD
+    ha_device_class: power_factor
+    unit_of_measurement: "%"
+  coolant_temp: 
+    name: Coolant Temperature
+    obd_key: COOLANT_TEMP
+    ha_device_class: temperature
+    unit_of_measurement: °C
+  engine_run_time: 
+    name: Engine Run Time
+    obd_key: RUN_TIME
+    ha_device_class: None
+    unit_of_measurement: seconds
+  distance_with_mil: 
+    name: Distance Traveled With Malfunction Indicator Lamp On
+    obd_key: DISTANCE_W_MIL #mil = malfunction indicator lamp
+    ha_device_class: None
+    unit_of_measurement: km
+  intake_air_temp: 
+    name: Intake Air Temperature
+    obd_key: INTAKE_TEMP
+    ha_device_class: temperature
+    unit_of_measurement: °C
+  vehicle_speed: 
+    name: Vehicle Speed
+    obd_key: SPEED
+    ha_device_class: None
+    unit_of_measurement: kph
+  engine_speed: 
+    name: Engine Speed
+    obd_key: RPM
+    ha_device_class: None
+    unit_of_measurement: rpm
+  control_module_voltage: 
+    name: Control Module Voltage
+    obd_key: CONTROL_MODULE_VOLTAGE
+    ha_device_class: voltage
+    unit_of_measurement: V
+  diagnostic_trouble_codes:
+    name: Diagnostic Trouble Codes
+    obd_key: GET_DTC
+    ha_device_class: None
+    unit_of_measurement: None
