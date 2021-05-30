@@ -3,19 +3,27 @@ import time
 import yaml
 import json
 import paho.mqtt.publish as MqttPublish
+import logging
 from serial import SerialException
 
-CAR_ATTRIBUTES_CONFIG_FILE = "./car_config.yml"
-MQTT_CONFIG_FILE = "./mqtt.yml"
+CAR_ATTRIBUTES_CONFIG_FILE = "./config/car_config.yml"
+MQTT_CONFIG_FILE = "./config/mqtt.yml"
 SLEEP_SECONDS_AFTER_READ = 120
 SLEEP_SECONDS_NO_READ = 10
 MQTT_STATE_TOPIC = 'obd/sensor/car/state'
 MQTT_HOME_ASSISTANT_TOPIC_BASE = 'homeassistant/sensor/car/'
 
+# Set up the logger
+log = logging.getLogger()
+log.setLevel(logging.INFO)
+console = logging.StreamHandler()
+log.addHandler(console)
+
+
 def main():
   # show list of available adaptors
   ports = obd.scan_serial()
-  print("Ports available: " + str(ports))
+  log.info("Ports available: " + str(ports))
 
   carProperties = readCarPropertiesConfig(CAR_ATTRIBUTES_CONFIG_FILE)
   attributesToRead = readCarAttributesConfig(CAR_ATTRIBUTES_CONFIG_FILE)
@@ -26,24 +34,23 @@ def main():
 
   while True:
     attributesWereRead = False
-    print("\n")
 
     try:
-      print("Attempting to read from OBD device...")
+      log.info("Attempting to read from OBD device...")
       obdConnection = obd.OBD() # auto-connects to USB or RF port
-      # printSupportedCommands(obdConnection) #DEBUG ONLY
+      printSupportedCommands(obdConnection)
 
       if obdConnection.status() == obd.OBDStatus.CAR_CONNECTED: # car is on
         car = readCarAttributes(obdConnection, attributesToRead)
         attributesWereRead = True
-        print("Car values = " + str(car)) #TODO debug
-        print("Successfully read from OBD device.")
+        log.debug("Car values = " + str(car)) #TODO debug
+        log.info("Successfully read from OBD device.")
         publishToMqtt(car, mqttConfig)
       elif obdConnection.status() == obd.OBDStatus.OBD_CONNECTED: # car is off
-        print("Car is off, will wait for ignition.")
+        log.info("Car is off, will wait for ignition.")
 
     except SerialException as e:
-      print("Error occurred connecting to OBD device: " + str(e))
+      log.error("Error occurred connecting to OBD device: " + str(e))
 
     finally:
       if obdConnection != None:
@@ -53,7 +60,7 @@ def main():
 
 
 def addHomeAssistantConfigToMqtt(config, carProperties, carAttributes):
-  print("Creating Home Assistant config in MQTT...")
+  log.info("Creating Home Assistant config in MQTT...")
   carName = carProperties["name"]
 
   messages = []
@@ -77,7 +84,7 @@ def addHomeAssistantConfigToMqtt(config, carProperties, carAttributes):
     topic = MQTT_HOME_ASSISTANT_TOPIC_BASE + attribute + "/config"
     messages.append({"topic": topic, "payload": json.dumps(message)})
 
-  print(messages)
+  log.debug(messages)
 
   MqttPublish.multiple(
     msgs=messages,
@@ -86,11 +93,11 @@ def addHomeAssistantConfigToMqtt(config, carProperties, carAttributes):
     keepalive=config["keepalive"],
     auth=config["auth"]
   )
-  print("Successfully created HomeAssistant config in MQTT.")
+  log.info("Successfully created HomeAssistant config in MQTT.")
 
 
 def publishToMqtt(payload, config):
-  print("Publishing to MQTT...")
+  log.info("Publishing to MQTT...")
   MqttPublish.single(
     topic=MQTT_STATE_TOPIC,
     hostname=config["host"],
@@ -99,7 +106,7 @@ def publishToMqtt(payload, config):
     auth=config["auth"],
     payload=json.dumps(payload)
   )
-  print("Successfully sent to MQTT.")
+  log.info("Successfully sent to MQTT.")
 
 
 def readCarAttributes(obdConnection, attributesToRead):
@@ -115,10 +122,10 @@ def readCarAttributes(obdConnection, attributesToRead):
 
 
 def printSupportedCommands(obdConnection):
-  print("Supported commands: ")
+  log.debug("Supported commands: ")
   for command in obdConnection.supported_commands:
-    print str(command)
-  print ""
+    log.debug(str(command))
+  log.debug("")
 
 
 def sleepBeforeNextRead(attributesWereRead):
@@ -126,35 +133,35 @@ def sleepBeforeNextRead(attributesWereRead):
     sleepTime = SLEEP_SECONDS_AFTER_READ
   else:
     sleepTime = SLEEP_SECONDS_NO_READ
-  print("Sleeping for %d seconds..." % sleepTime)
+  log.info("Sleeping for %d seconds..." % sleepTime)
   time.sleep(sleepTime) #sleep before trying again
 
 
 def readCarPropertiesConfig(filename):
-  print("Reading config from file: \'%s\'" % str(filename))
+  log.info("Reading config from file: \'%s\'" % str(filename))
   carProperties = {}
   with open(filename, "r") as file:
     carProperties = yaml.load(file, Loader=yaml.FullLoader)["car"]
-    print("Car properties read: " + str(carProperties))
+    log.info("Car properties read: " + str(carProperties))
   return carProperties
 
 
 def readCarAttributesConfig(filename):
-  print("Reading config from file: \'%s\'" % str(filename))
+  log.info("Reading config from file: \'%s\'" % str(filename))
   carAttributes = {}
   with open(filename, "r") as file:
     carAttributes = yaml.load(file, Loader=yaml.FullLoader)["attributes"]
-    print("Read %d attributes." % len(carAttributes))
+    log.info("Read %d attributes." % len(carAttributes))
   return carAttributes
 
 
 def readMqttConfig(filename):
-  print("Reading config from file: \'%s\'" % str(filename))
+  log.info("Reading config from file: \'%s\'" % str(filename))
   mqttConfig = {}
   with open(filename, "r") as file:
     config = yaml.load(file, Loader=yaml.FullLoader)
     mqttConfig = config["mqtt"]
-    print("MQTT config successfully read.")
+    log.info("MQTT config successfully read.")
   return mqttConfig
 
 

@@ -33,3 +33,5 @@ Step 4 - Connect Car with Python OBD
 TODO: implement proper logging
 TODO: Look at todos
 TODO: Instructions for copying and setting up config files
+
+RUN WITH: `sudo docker-compose up -d --build --force-recreate`
